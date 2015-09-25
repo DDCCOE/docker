@@ -44,14 +44,14 @@ while [ $# -gt 0 ]; do
 
 	imageFile="${image//\//_}" # "/" can't be in filenames :)
 
-	token="$(curl -sSL -o /dev/null -D- -H 'X-Docker-Token: true' "https://index.docker.io/v1/repositories/$image/images" | tr -d '\r' | awk -F ': *' '$1 == "X-Docker-Token" { print $2 }')"
+	token="$(curl -ksSL -o /dev/null -D- -H 'X-Docker-Token: true' "https://index.docker.io/v1/repositories/$image/images" | tr -d '\r' | awk -F ': *' '$1 == "X-Docker-Token" { print $2 }')"
 
 	if [ -z "$imageId" ]; then
-		imageId="$(curl -sSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/repositories/$image/tags/$tag")"
+		imageId="$(curl -ksSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/repositories/$image/tags/$tag")"
 		imageId="${imageId//\"/}"
 	fi
 
-	ancestryJson="$(curl -sSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/ancestry")"
+	ancestryJson="$(curl -ksSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/ancestry")"
 	if [ "${ancestryJson:0:1}" != '[' ]; then
 		echo >&2 "error: /v1/images/$imageId/ancestry returned something unexpected:"
 		echo >&2 "  $ancestryJson"
@@ -74,7 +74,7 @@ while [ $# -gt 0 ]; do
 		mkdir -p "$dir/$imageId"
 		echo '1.0' > "$dir/$imageId/VERSION"
 
-		curl -sSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/json" -o "$dir/$imageId/json"
+		curl -ksSL -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/json" -o "$dir/$imageId/json"
 
 		# TODO figure out why "-C -" doesn't work here
 		# "curl: (33) HTTP server doesn't seem to support byte ranges. Cannot resume."
@@ -84,7 +84,7 @@ while [ $# -gt 0 ]; do
 			echo "skipping existing ${imageId:0:12}"
 			continue
 		fi
-		curl -SL --progress -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/layer" -o "$dir/$imageId/layer.tar" # -C -
+		curl -kSL --progress -H "Authorization: Token $token" "https://registry-1.docker.io/v1/images/$imageId/layer" -o "$dir/$imageId/layer.tar" # -C -
 	done
 	echo
 done
